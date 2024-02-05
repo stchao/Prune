@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Prune.Services;
 using Serilog;
 
 namespace Prune.Extensions
@@ -19,7 +20,8 @@ namespace Prune.Extensions
 
             services
                 .AddSingleton<IConfiguration>(configuration)
-                .AddLogging(configure => configure.AddSerilog());
+                .AddLogging(configure => configure.AddSerilog())
+                .AddScoped<IPruneService, PruneService>();
 
             return services;
         }
