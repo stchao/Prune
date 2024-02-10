@@ -12,6 +12,7 @@ namespace Prune.Services
         private readonly bool isForceConfirmEnabled = configuration.GetValue<bool>("ForceConfirm");
         private readonly List<string> ignoreStringsList =
             configuration.GetValue<List<string>>("IgnoreStrings") ?? [];
+        private readonly int startOfWeek = configuration.GetValue<int>("StartOfWeek");
         private long previousFileLastModifiedDateInMs =
             DateTimeOffset.MaxValue.ToUnixTimeMilliseconds();
         private int currentFileIndex = 0;
@@ -196,11 +197,17 @@ namespace Prune.Services
             {
                 var intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
                     interval,
-                    previousFileLastModifiedDateInMs
+                    previousFileLastModifiedDateInMs,
+                    0,
+                    startOfWeek
                 );
                 var intervalEndInUnixMs =
-                    IntervalExtension.GetIntervalStartInUnixMs(interval, intervalStartInUnixMs, 1)
-                    - 1;
+                    IntervalExtension.GetIntervalStartInUnixMs(
+                        interval,
+                        intervalStartInUnixMs,
+                        1,
+                        startOfWeek
+                    ) - 1;
 
                 var currentFilePath = filePaths[currentFileIndex];
                 var currentFileLastModifiedDateInMs = DateTimeOffset
