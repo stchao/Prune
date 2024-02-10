@@ -39,7 +39,3 @@ These options can be configured by setting the values for the keys in the appset
 | `PruneDirectories:KeepWeekly` | `0` | `2` | The number of weekly backups to keep. |
 | `PruneDirectories:KeepMonthly` | `0` | `1` | The number of monthly backups to keep. |
 | `PruneDirectories:KeepYearly` | `0` | `0` | The number of yearly backups to keep. |
-
-| `Credentials:APIKeyCredential:ClientSecret` or `Credentials:EmailPasswordCredential:ClientSecret`* | - | `clientSecret` | A unique value that can be rotated. See [`Personal API Key`](https://bitwarden.com/help/personal-api-key/) for how to obtain it. |
-
-\* For this `ClientSecret` key under the key `EmailPasswordCredential`, it will only be needed when Bitwarden CLI prompts for additional authentication. See [`CLI Authentication Challenges`](https://bitwarden.com/help/cli-auth-challenges/).
