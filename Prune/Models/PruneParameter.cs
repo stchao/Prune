@@ -7,6 +7,8 @@
 
         public string Path { get; set; } = string.Empty;
 
+        public string FileNamePattern { get; set; } = string.Empty;
+
         public int KeepLast { get; set; } = -1;
 
         public int KeepHourly { get; set; } = -1;

@@ -26,14 +26,14 @@ These options can be configured by setting the values for the keys in the appset
 | `ForceConfirm` | `false` | `true` | The application will prompt for confirmation for deleting each file. |
 | `IgnoreStrings` | `[]` | `[ "example-file.txt" ]` | The application will ignore any file(s) that contain the given string(s).  By default, the required application files (`appsettings.json`, `Bitwarden-Backup.exe`, `Bitwarden-Backup.pdb`, `bw.exe`) are autoamtically ignored. |
 | `StartOfWeek`* | `0` | `2` | The day a week begins where `0` indicates `Sunday` and `6` indicates `Friday`. |
-| `Default:Path` | `Executing Directory` | `C:\Temp` | The default prune path if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepLast` | `0` | `5` | The default number of latest backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepHourly` | `0` | `4` | The default number of hourly backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepDaily` | `0` | `3` | The default number of daily backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepWeekly` | `0` | `2` | The default number of weekly backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepMonthly` | `0` | `1` | The default number of monthly backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepYearly` | `0` | `0` | The default number of yearly backups to keep if the key or invalid value is set in PruneDirectories. |
-| `PruneDirectories:Path` | `Executing Directory` | `C:\Temp` | The prune path. |
+| `PruneDirectories:Path` | `` | `C:\Temp` | The prune path. Empty or no value here indicates the executing directory. |
+| `PruneDirectories:FileNamePattern` | `` | `^example-file[.](txt|log)$` | The pattern a file name must match. Empty or no value here indicates to process all file(s). |
 | `PruneDirectories:KeepLast` | `0` | `5` | The number of latest backups to keep. |
 | `PruneDirectories:KeepHourly` | `0` | `4` | The number of hourly backups to keep. |
 | `PruneDirectories:KeepDaily` | `0` | `3` | The number of daily backups to keep. |

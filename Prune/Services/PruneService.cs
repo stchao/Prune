@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Prune.Extensions;
 using Prune.Models;
@@ -85,27 +86,35 @@ namespace Prune.Services
             }
 
             logger.LogInformation("Getting file(s) from '{path}'.", parameter.Path);
-            var filesInfo = new DirectoryInfo(parameter.Path)
+            var filesInfoList = new DirectoryInfo(parameter.Path)
                 .GetFiles()
                 .Where(
                     fileInfo =>
-                        ignoreStringsList.Any(
+                        !ignoreStringsList.Any(
                             ignoreString =>
-                                !fileInfo.Name.Contains(
+                                fileInfo.Name.Contains(
                                     ignoreString,
                                     StringComparison.OrdinalIgnoreCase
                                 )
                         )
-                )
-                .ToArray();
+                );
+
+            if (!string.IsNullOrWhiteSpace(parameter.FileNamePattern))
+            {
+                filesInfoList = filesInfoList.Where(
+                    fileInfo => Regex.IsMatch(fileInfo.Name, parameter.FileNamePattern)
+                );
+            }
+
+            var filesInfoArray = filesInfoList.ToArray();
 
             Array.Sort(
-                filesInfo,
+                filesInfoArray,
                 (a, b) => DateTime.Compare(b.LastAccessTimeUtc, a.LastAccessTimeUtc)
             );
 
             logger.LogDebug("Getting files(s) to remove.");
-            return GetFilesToRemoveList(parameter, filesInfo);
+            return GetFilesToRemoveList(parameter, filesInfoArray);
         }
 
         public int RemoveFiles(
