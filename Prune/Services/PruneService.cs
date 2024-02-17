@@ -14,20 +14,13 @@ namespace Prune.Services
         private readonly List<string> ignoreStringsList =
             configuration.GetValue<List<string>>("IgnoreStrings") ?? [];
         private readonly int startOfWeek = configuration.GetValue<int>("StartOfWeek");
-        private long previousFileLastModifiedDateInMs =
-            DateTimeOffset.MaxValue.ToUnixTimeMilliseconds();
+        private long intervalStartInUnixMs = IntervalExtension.UnixMaxInMs;
         private int currentFileIndex = 0;
 
         public List<PruneParameter> GetAndSetPruneConfigurations()
         {
             ignoreStringsList.AddRange(
-                new List<string>()
-                {
-                    "appsettings.json",
-                    "Bitwarden-Backup.exe",
-                    "Bitwarden-Backup.pdb",
-                    "bw.exe"
-                }
+                ["appsettings.json", "Bitwarden-Backup.exe", "Bitwarden-Backup.pdb", "bw.exe"]
             );
 
             logger.LogDebug("Getting prune configuration(s).");
@@ -116,7 +109,7 @@ namespace Prune.Services
             // Get the most recent file's modified date in case there is no KeepLast specified
             if (filesInfoArray.Length > 0)
             {
-                previousFileLastModifiedDateInMs = DateTimeOffset
+                intervalStartInUnixMs = DateTimeOffset
                     .Parse(filesInfoArray[0].LastAccessTime.ToString())
                     .ToUnixTimeMilliseconds();
             }
@@ -176,22 +169,52 @@ namespace Prune.Services
             var filesToKeep = new HashSet<string>();
 
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepLast, Interval.Last)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepLast,
+                    Interval.Last,
+                    filesToKeep.Count > 0
+                )
             );
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepHourly, Interval.Hourly)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepHourly,
+                    Interval.Hourly,
+                    filesToKeep.Count > 0
+                )
             );
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepDaily, Interval.Daily)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepDaily,
+                    Interval.Daily,
+                    filesToKeep.Count > 0
+                )
             );
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepWeekly, Interval.Weekly)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepWeekly,
+                    Interval.Weekly,
+                    filesToKeep.Count > 0
+                )
             );
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepMonthly, Interval.Monthly)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepMonthly,
+                    Interval.Monthly,
+                    filesToKeep.Count > 0
+                )
             );
             filesToKeep.UnionWith(
-                GetFilesToKeepForInterval(filePaths, parameter.KeepYearly, Interval.Yearly)
+                GetFilesToKeepForInterval(
+                    filePaths,
+                    parameter.KeepYearly,
+                    Interval.Yearly,
+                    filesToKeep.Count > 0
+                )
             );
 
             files = files.Where(file => !filesToKeep.Contains(file)).ToList();
@@ -202,7 +225,8 @@ namespace Prune.Services
         private HashSet<string> GetFilesToKeepForInterval(
             FileInfo[] filePaths,
             int keepCount,
-            Interval interval
+            Interval interval,
+            bool isThereFilesToKeep
         )
         {
             var filesToKeep = new HashSet<string>();
@@ -213,11 +237,25 @@ namespace Prune.Services
                 return filesToKeep;
             }
 
+            if (isThereFilesToKeep)
+            {
+                // Check if there was another Keep option run. If so, go to the end
+                // of the previous date interval for the current interval (e.g. the current
+                // interval is hourly so 15:36 becomes 14:59)
+                intervalStartInUnixMs =
+                    IntervalExtension.GetIntervalStartInUnixMs(
+                        interval,
+                        intervalStartInUnixMs,
+                        0,
+                        startOfWeek
+                    ) - 1;
+            }
+
             while (currentFileIndex < filePaths.Length && tempKeepCount < keepCount)
             {
-                var intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
+                intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
                     interval,
-                    previousFileLastModifiedDateInMs,
+                    intervalStartInUnixMs,
                     0,
                     startOfWeek
                 );
@@ -238,14 +276,14 @@ namespace Prune.Services
 
                 if (
                     currentFileLastModifiedDateInMs <= intervalEndInUnixMs
-                    && currentFileLastModifiedDateInMs >= intervalStartInUnixMs
+                    || interval.Equals(Interval.Last)
                 )
                 {
                     filesToKeep.Add(currentFilePath.FullName);
                     // Update previousFileLastModifiedDateInMs with the previous date interval
-                    // (e.g. 15:36 becomes 14:36, or May 18th becomes May 17th) to prevent counting multiple files
-                    // for the same interval
-                    previousFileLastModifiedDateInMs = IntervalExtension.GetIntervalStartInUnixMs(
+                    // (e.g. 15:36 becomes 14:00, or May 18th becomes May 17th) to prevent
+                    // overcounting files for the same date interval
+                    intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
                         interval,
                         currentFileLastModifiedDateInMs,
                         -1,

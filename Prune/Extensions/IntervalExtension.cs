@@ -5,6 +5,7 @@ namespace Prune.Extensions
     public static class IntervalExtension
     {
         public const long UnixEpochInMs = 0;
+        public const long UnixMaxInMs = 253_402_300_799_000;
         public const long MsInHour = 3_600_000;
         public const long MsInDay = 86_400_000;
         public const long MsInWeek = 604_800_000;
@@ -21,6 +22,8 @@ namespace Prune.Extensions
 
             switch (interval)
             {
+                case Interval.Last:
+                    return unixTimeInMs;
                 case Interval.Hourly:
                     msInInterval = MsInHour;
                     dateTimeOffset = dateTimeOffset.AddHours(intervalToAdd);
@@ -47,7 +50,7 @@ namespace Prune.Extensions
                         .AddDays(-dateTimeOffset.DayOfYear + 1);
                     break;
                 default:
-                    return UnixEpochInMs;
+                    return -1;
             }
 
             return dateTimeOffset
