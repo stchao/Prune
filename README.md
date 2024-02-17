@@ -33,7 +33,7 @@ These options can be configured by setting the values for the keys in the appset
 | `Default:KeepMonthly` | `0` | `1` | The default number of monthly backups to keep if the key or invalid value is set in PruneDirectories. |
 | `Default:KeepYearly` | `0` | `0` | The default number of yearly backups to keep if the key or invalid value is set in PruneDirectories. |
 | `PruneDirectories:Path` | `` | `C:\Temp` | The prune path. Empty or no value here indicates the executing directory. |
-| `PruneDirectories:FileNamePattern` | `` | `^example-file[.](txt|log)$` | The pattern a file name must match. Empty or no value here indicates to process all file(s). |
+| `PruneDirectories:FileNamePattern` | `` | `^example-file[.](txt\|log)$` | The pattern a file name must match. Empty or no value here indicates to process all file(s). |
 | `PruneDirectories:KeepLast` | `0` | `5` | The number of latest backups to keep. |
 | `PruneDirectories:KeepHourly` | `0` | `4` | The number of hourly backups to keep. |
 | `PruneDirectories:KeepDaily` | `0` | `3` | The number of daily backups to keep. |
