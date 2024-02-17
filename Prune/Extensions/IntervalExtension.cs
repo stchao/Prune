@@ -2,14 +2,14 @@
 
 namespace Prune.Extensions
 {
-    internal static class IntervalExtension
+    public static class IntervalExtension
     {
         public const long UnixEpochInMs = 0;
         public const long MsInHour = 3_600_000;
         public const long MsInDay = 86_400_000;
         public const long MsInWeek = 604_800_000;
 
-        internal static long GetIntervalStartInUnixMs(
+        public static long GetIntervalStartInUnixMs(
             Interval interval,
             long unixTimeInMs,
             int intervalToAdd = 0,

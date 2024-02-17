@@ -1,6 +1,6 @@
 ﻿namespace Prune.Models
 {
-    internal enum Interval
+    public enum Interval
     {
         Last,
         Hourly,

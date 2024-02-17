@@ -1,6 +1,6 @@
 ﻿namespace Prune.Models
 {
-    internal class PruneParameter
+    public class PruneParameter
     {
         public static readonly string Key = "PruneDirectories";
         public static readonly string DefaultKey = "Default";
