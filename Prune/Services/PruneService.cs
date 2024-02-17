@@ -6,7 +6,7 @@ using Prune.Models;
 
 namespace Prune.Services
 {
-    internal class PruneService(ILogger<PruneService> logger, IConfiguration configuration)
+    public class PruneService(ILogger<PruneService> logger, IConfiguration configuration)
         : IPruneService
     {
         private readonly bool isDryRunEnabled = configuration.GetValue<bool>("DryRun");
@@ -55,7 +55,7 @@ namespace Prune.Services
             pruneParameters.ForEach(
                 pruneParameter => pruneParameter.SetInvalidProperties(pruneDefault)
             );
-            logger.LogInformation("Set invalid properties in prune parameter(s).");
+            logger?.LogInformation("Set invalid properties in prune parameter(s).");
 
             return pruneParameters;
         }
@@ -113,6 +113,14 @@ namespace Prune.Services
                 (a, b) => DateTime.Compare(b.LastAccessTimeUtc, a.LastAccessTimeUtc)
             );
 
+            // Get the most recent file's modified date in case there is no KeepLast specified
+            if (filesInfoArray.Length > 0)
+            {
+                previousFileLastModifiedDateInMs = DateTimeOffset
+                    .Parse(filesInfoArray[0].LastAccessTime.ToString())
+                    .ToUnixTimeMilliseconds();
+            }
+
             logger.LogDebug("Getting files(s) to remove.");
             return GetFilesToRemoveList(parameter, filesInfoArray);
         }
@@ -164,45 +172,48 @@ namespace Prune.Services
 
         private List<string> GetFilesToRemoveList(PruneParameter parameter, FileInfo[] filePaths)
         {
-            var filesToRemove = new List<string>();
+            var files = filePaths.Select(filePath => filePath.FullName).ToList();
+            var filesToKeep = new HashSet<string>();
 
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepLast, Interval.Last)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepLast, Interval.Last)
             );
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepHourly, Interval.Hourly)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepHourly, Interval.Hourly)
             );
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepDaily, Interval.Daily)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepDaily, Interval.Daily)
             );
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepWeekly, Interval.Weekly)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepWeekly, Interval.Weekly)
             );
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepMonthly, Interval.Monthly)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepMonthly, Interval.Monthly)
             );
-            filesToRemove.AddRange(
-                GetFilesToRemoveForInterval(filePaths, parameter.KeepYearly, Interval.Yearly)
+            filesToKeep.UnionWith(
+                GetFilesToKeepForInterval(filePaths, parameter.KeepYearly, Interval.Yearly)
             );
 
-            return filesToRemove;
+            files = files.Where(file => !filesToKeep.Contains(file)).ToList();
+
+            return files;
         }
 
-        private List<string> GetFilesToRemoveForInterval(
+        private HashSet<string> GetFilesToKeepForInterval(
             FileInfo[] filePaths,
             int keepCount,
             Interval interval
         )
         {
-            var filesToRemove = new List<string>();
+            var filesToKeep = new HashSet<string>();
             var tempKeepCount = 0;
 
             if (keepCount < 1)
             {
-                return filesToRemove;
+                return filesToKeep;
             }
 
-            while (currentFileIndex < filePaths.Length || tempKeepCount < keepCount)
+            while (currentFileIndex < filePaths.Length && tempKeepCount < keepCount)
             {
                 var intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
                     interval,
@@ -230,19 +241,26 @@ namespace Prune.Services
                     && currentFileLastModifiedDateInMs >= intervalStartInUnixMs
                 )
                 {
-                    previousFileLastModifiedDateInMs = currentFileLastModifiedDateInMs;
+                    filesToKeep.Add(currentFilePath.FullName);
+                    // Update previousFileLastModifiedDateInMs with the previous date interval
+                    // (e.g. 15:36 becomes 14:36, or May 18th becomes May 17th) to prevent counting multiple files
+                    // for the same interval
+                    previousFileLastModifiedDateInMs = IntervalExtension.GetIntervalStartInUnixMs(
+                        interval,
+                        currentFileLastModifiedDateInMs,
+                        -1,
+                        startOfWeek
+                    );
                     tempKeepCount++;
                     continue;
                 }
-
-                filesToRemove.Add(currentFilePath.FullName);
             }
 
-            return filesToRemove;
+            return filesToKeep;
         }
     }
 
-    internal interface IPruneService
+    public interface IPruneService
     {
         public List<PruneParameter> GetAndSetPruneConfigurations();
 

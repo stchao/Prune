@@ -39,12 +39,12 @@ namespace Prune.Extensions
                 case Interval.Monthly:
                     dateTimeOffset = dateTimeOffset
                         .AddMonths(intervalToAdd)
-                        .AddDays(-dateTimeOffset.Day);
+                        .AddDays(-dateTimeOffset.Day + 1);
                     break;
                 case Interval.Yearly:
                     dateTimeOffset = dateTimeOffset
                         .AddYears(intervalToAdd)
-                        .AddDays(-dateTimeOffset.DayOfYear);
+                        .AddDays(-dateTimeOffset.DayOfYear + 1);
                     break;
                 default:
                     return UnixEpochInMs;
