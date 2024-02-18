@@ -11,7 +11,7 @@ namespace Prune.Extensions
         public const long MsInWeek = 604_800_000;
 
         public static long GetIntervalStartInUnixMs(
-            Interval interval,
+            this Interval interval,
             long unixTimeInMs,
             int intervalToAdd = 0,
             int startOfWeek = 0
