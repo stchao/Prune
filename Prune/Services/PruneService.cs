@@ -3,11 +3,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Prune.Extensions;
 using Prune.Models;
+using Prune.Wrapper;
 
 namespace Prune.Services
 {
-    public class PruneService(ILogger<PruneService> logger, IConfiguration configuration)
-        : IPruneService
+    public class PruneService(
+        ILogger<PruneService> logger,
+        IConfiguration configuration,
+        IDirectoryInfoWrapper directoryInfoWrapper,
+        IFileWrapper fileWrapper
+    ) : IPruneService
     {
         private readonly bool isDryRunEnabled = configuration.GetValue<bool>("DryRun");
         private readonly bool isForceConfirmEnabled = configuration.GetValue<bool>("ForceConfirm");
@@ -64,7 +69,11 @@ namespace Prune.Services
                 var filesToRemoveList = GetFilesToRemoveList(parameter);
 
                 logger.LogDebug("Removing {count} files(s).", filesToRemoveList.Count);
-                var filesRemovedCount = RemoveFiles(filesToRemoveList, isDryRunEnabled);
+                var filesRemovedCount = RemoveFiles(
+                    filesToRemoveList,
+                    isDryRunEnabled,
+                    isForceConfirmEnabled
+                );
                 logger.LogInformation("Removed {count} file(s)", filesRemovedCount);
             }
         }
@@ -72,15 +81,15 @@ namespace Prune.Services
         public List<string> GetFilesToRemoveList(PruneParameter parameter)
         {
             logger.LogDebug("Checking if '{path}' exists.", parameter.Path);
-            if (!Directory.Exists(parameter.Path))
+            if (directoryInfoWrapper.Exists(parameter.Path))
             {
                 logger.LogError("Directory '{path}' does not exist.", parameter.Path);
                 return [];
             }
 
             logger.LogInformation("Getting file(s) from '{path}'.", parameter.Path);
-            var filesInfoList = new DirectoryInfo(parameter.Path)
-                .GetFiles()
+            var filesInfoList = directoryInfoWrapper
+                .GetFiles(parameter.Path)
                 .Where(
                     fileInfo =>
                         !ignoreStringsList.Any(
@@ -145,7 +154,7 @@ namespace Prune.Services
 
                     if (deleteFile)
                     {
-                        File.Delete(filePath);
+                        fileWrapper.Delete(filePath);
                         logger.LogDebug("Deleted '{filePath}'.", filePath);
                         count++;
                     }
@@ -163,7 +172,10 @@ namespace Prune.Services
             return count;
         }
 
-        private List<string> GetFilesToRemoveList(PruneParameter parameter, FileInfo[] filePaths)
+        private List<string> GetFilesToRemoveList(
+            PruneParameter parameter,
+            IFileWrapper[] filePaths
+        )
         {
             var files = filePaths.Select(filePath => filePath.FullName).ToList();
             var filesToKeep = new HashSet<string>();
@@ -223,7 +235,7 @@ namespace Prune.Services
         }
 
         private HashSet<string> GetFilesToKeepForInterval(
-            FileInfo[] filePaths,
+            IFileWrapper[] filePaths,
             int keepCount,
             Interval interval,
             bool isThereFilesToKeep
@@ -243,29 +255,18 @@ namespace Prune.Services
                 // of the previous date interval for the current interval (e.g. the current
                 // interval is hourly so 15:36 becomes 14:59)
                 intervalStartInUnixMs =
-                    IntervalExtension.GetIntervalStartInUnixMs(
-                        interval,
-                        intervalStartInUnixMs,
-                        0,
-                        startOfWeek
-                    ) - 1;
+                    interval.GetIntervalStartInUnixMs(intervalStartInUnixMs, 0, startOfWeek) - 1;
             }
 
             while (currentFileIndex < filePaths.Length && tempKeepCount < keepCount)
             {
-                intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
-                    interval,
+                intervalStartInUnixMs = interval.GetIntervalStartInUnixMs(
                     intervalStartInUnixMs,
                     0,
                     startOfWeek
                 );
                 var intervalEndInUnixMs =
-                    IntervalExtension.GetIntervalStartInUnixMs(
-                        interval,
-                        intervalStartInUnixMs,
-                        1,
-                        startOfWeek
-                    ) - 1;
+                    interval.GetIntervalStartInUnixMs(intervalStartInUnixMs, 1, startOfWeek) - 1;
 
                 var currentFilePath = filePaths[currentFileIndex];
                 var currentFileLastModifiedDateInMs = DateTimeOffset
@@ -283,8 +284,7 @@ namespace Prune.Services
                     // Update previousFileLastModifiedDateInMs with the previous date interval
                     // (e.g. 15:36 becomes 14:00, or May 18th becomes May 17th) to prevent
                     // overcounting files for the same date interval
-                    intervalStartInUnixMs = IntervalExtension.GetIntervalStartInUnixMs(
-                        interval,
+                    intervalStartInUnixMs = interval.GetIntervalStartInUnixMs(
                         currentFileLastModifiedDateInMs,
                         -1,
                         startOfWeek
