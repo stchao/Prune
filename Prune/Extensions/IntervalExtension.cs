@@ -41,13 +41,13 @@ namespace Prune.Extensions
                     break;
                 case Interval.Monthly:
                     dateTimeOffset = dateTimeOffset
-                        .AddMonths(intervalToAdd)
-                        .AddDays(-dateTimeOffset.Day + 1);
+                        .AddDays(-dateTimeOffset.Day + 1)
+                        .AddMonths(intervalToAdd);
                     break;
                 case Interval.Yearly:
                     dateTimeOffset = dateTimeOffset
-                        .AddYears(intervalToAdd)
-                        .AddDays(-dateTimeOffset.DayOfYear + 1);
+                        .AddDays(-dateTimeOffset.DayOfYear + 1)
+                        .AddYears(intervalToAdd);
                     break;
                 default:
                     return -1;
