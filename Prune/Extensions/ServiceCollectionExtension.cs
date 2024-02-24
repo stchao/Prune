@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Prune.Services;
+using Prune.Wrapper;
 using Serilog;
 
 namespace Prune.Extensions
@@ -21,6 +23,8 @@ namespace Prune.Extensions
             services
                 .AddSingleton<IConfiguration>(configuration)
                 .AddLogging(configure => configure.AddSerilog())
+                .AddScoped<IDirectoryInfoWrapper, DirectoryInfoWrapper>()
+                .AddScoped<IFileWrapper, FileWrapper>()
                 .AddScoped<IPruneService, PruneService>();
 
             return services;

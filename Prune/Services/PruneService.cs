@@ -66,11 +66,12 @@ namespace Prune.Services
             {
                 logger.LogInformation("Pruning '{path}'.", parameter.Path);
                 logger.LogDebug("Parameter:\n{@parameter}", parameter);
-                var filesToRemoveList = GetFilesToRemoveList(parameter);
+                (var filePaths, var filesToKeep) = GetFilesAndFilesToKeepList(parameter);
 
-                logger.LogDebug("Removing {count} files(s).", filesToRemoveList.Count);
+                logger.LogDebug("Removing {count} files(s).", filePaths.Count - filesToKeep.Count);
                 var filesRemovedCount = RemoveFiles(
-                    filesToRemoveList,
+                    filePaths,
+                    filesToKeep,
                     isDryRunEnabled,
                     isForceConfirmEnabled
                 );
@@ -78,13 +79,15 @@ namespace Prune.Services
             }
         }
 
-        public List<string> GetFilesToRemoveList(PruneParameter parameter)
+        public (List<string> filePaths, HashSet<string> filesToKeep) GetFilesAndFilesToKeepList(
+            PruneParameter parameter
+        )
         {
             logger.LogDebug("Checking if '{path}' exists.", parameter.Path);
-            if (directoryInfoWrapper.Exists(parameter.Path))
+            if (!directoryInfoWrapper.Exists(parameter.Path))
             {
                 logger.LogError("Directory '{path}' does not exist.", parameter.Path);
-                return [];
+                return ([], []);
             }
 
             logger.LogInformation("Getting file(s) from '{path}'.", parameter.Path);
@@ -124,25 +127,31 @@ namespace Prune.Services
             }
 
             logger.LogDebug("Getting files(s) to remove.");
-            return GetFilesToRemoveList(parameter, filesInfoArray);
+
+            var filePaths = filesInfoArray.Select(filePath => filePath.FullName).ToList();
+            var filesToKeep = GetFilesToKeepHashSet(parameter, filesInfoArray);
+
+            return (filePaths, filesToKeep);
         }
 
         public int RemoveFiles(
             List<string> filePaths,
+            HashSet<string> filesToKeep,
             bool isDryRunEnabled = false,
             bool isForceConfirmEnabled = false
         )
         {
             var count = 0;
             var deleteFile = true;
+            var dryRunText = isDryRunEnabled ? "Dry run: " : string.Empty;
+
             foreach (var filePath in filePaths)
             {
                 try
                 {
-                    if (isDryRunEnabled)
+                    if (filesToKeep.Contains(filePath))
                     {
-                        logger.LogInformation("Dry run: Deleted '{filePath}'.", filePath);
-                        count++;
+                        logger.LogDebug("{dryRunText}Keeping '{filePath}'.", dryRunText, filePath);
                         continue;
                     }
 
@@ -152,12 +161,19 @@ namespace Prune.Services
                         deleteFile = Console.ReadLine()?.Trim().ToLower() == "y";
                     }
 
-                    if (deleteFile)
+                    if (!deleteFile)
+                    {
+                        logger.LogDebug("{dryRunText}Skipping '{filePath}'.", dryRunText, filePath);
+                        continue;
+                    }
+
+                    if (!isDryRunEnabled)
                     {
                         fileWrapper.Delete(filePath);
-                        logger.LogDebug("Deleted '{filePath}'.", filePath);
-                        count++;
                     }
+
+                    logger.LogDebug("{dryRunText}Deleted '{filePath}'.", dryRunText, filePath);
+                    count++;
                 }
                 catch (Exception ex)
                 {
@@ -172,12 +188,11 @@ namespace Prune.Services
             return count;
         }
 
-        private List<string> GetFilesToRemoveList(
+        private HashSet<string> GetFilesToKeepHashSet(
             PruneParameter parameter,
             IFileWrapper[] filePaths
         )
         {
-            var files = filePaths.Select(filePath => filePath.FullName).ToList();
             var filesToKeep = new HashSet<string>();
 
             filesToKeep.UnionWith(
@@ -229,9 +244,7 @@ namespace Prune.Services
                 )
             );
 
-            files = files.Where(file => !filesToKeep.Contains(file)).ToList();
-
-            return files;
+            return filesToKeep;
         }
 
         private HashSet<string> GetFilesToKeepForInterval(
@@ -304,10 +317,13 @@ namespace Prune.Services
 
         public void PruneDirectories(List<PruneParameter> parameters);
 
-        public List<string> GetFilesToRemoveList(PruneParameter parameter);
+        public (List<string> filePaths, HashSet<string> filesToKeep) GetFilesAndFilesToKeepList(
+            PruneParameter parameter
+        );
 
         public int RemoveFiles(
             List<string> filePaths,
+            HashSet<string> filesToKeep,
             bool isDryRunEnabled = false,
             bool isForceConfirmEnabled = false
         );

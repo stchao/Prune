@@ -35,7 +35,7 @@ namespace Prune
 
                 logger.LogDebug("Pruning file(s).");
                 pruneService.PruneDirectories(pruneParameters);
-                logger.LogInformation("Pruned file(s).");
+                logger.LogInformation("Pruned file(s).\n");
             }
             catch (InvalidOperationException ex)
             {
