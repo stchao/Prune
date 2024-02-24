@@ -105,7 +105,8 @@ namespace Prune.Services.Tests
                 fileWrapperMock!.Setup(x => x.Delete(file.FullName));
             }
 
-            directoryInfoWrapperMock!.Setup(x => x.GetFiles(path)).Returns([.. files]);
+            directoryInfoWrapperMock!.Setup(x => x.Exists(path)).Returns(true);
+            directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
             pruneService!.PruneDirectories(parameters);
@@ -121,7 +122,8 @@ namespace Prune.Services.Tests
 
                 fileWrapperMock!.Verify(x => x.Delete(file.FullName), Times.Once);
             }
-            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once());
+            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
+            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
 
         [TestMethod()]
@@ -147,7 +149,7 @@ namespace Prune.Services.Tests
 
             // Assert
             Assert.AreEqual(0, filesToRemove.Count);
-            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once());
+            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
         }
 
         [TestMethod()]
@@ -167,7 +169,8 @@ namespace Prune.Services.Tests
                 Path = path
             };
 
-            directoryInfoWrapperMock!.Setup(x => x.GetFiles(path)).Returns([.. files]);
+            directoryInfoWrapperMock!.Setup(x => x.Exists(path)).Returns(true);
+            directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
             var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
@@ -175,7 +178,8 @@ namespace Prune.Services.Tests
             // Assert
             // There are 84 files
             Assert.AreEqual(84, filesToRemove.Count);
-            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once());
+            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
+            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
 
         [TestMethod()]
@@ -204,7 +208,8 @@ namespace Prune.Services.Tests
                 "file_created_2023-07-23_20-00-00.txt"
             };
 
-            directoryInfoWrapperMock!.Setup(x => x.GetFiles(path)).Returns([.. files]);
+            directoryInfoWrapperMock!.Setup(x => x.Exists(path)).Returns(true);
+            directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
             var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
@@ -213,7 +218,8 @@ namespace Prune.Services.Tests
             // There are 84 files
             Assert.AreEqual(78, filesToRemove.Count);
             Assert.IsFalse(filesToRemove.Any(filesToKeep.Contains));
-            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once());
+            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
+            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
 
         [TestMethod()]
@@ -240,7 +246,8 @@ namespace Prune.Services.Tests
                 "file_created_2023-07-25_20-00-00.txt"
             };
 
-            directoryInfoWrapperMock!.Setup(x => x.GetFiles(path)).Returns([.. files]);
+            directoryInfoWrapperMock!.Setup(x => x.Exists(path)).Returns(true);
+            directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
             var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
@@ -249,7 +256,8 @@ namespace Prune.Services.Tests
             // There are 84 files
             Assert.AreEqual(80, filesToRemove.Count);
             Assert.IsFalse(filesToRemove.Any(filesToKeep.Contains));
-            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once());
+            directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
+            directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
 
         [TestMethod()]
@@ -276,7 +284,7 @@ namespace Prune.Services.Tests
 
             foreach (var file in files)
             {
-                fileWrapperMock!.Verify(x => x.Delete(file), Times.Once());
+                fileWrapperMock!.Verify(x => x.Delete(file), Times.Once);
             }
         }
 
