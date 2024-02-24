@@ -127,7 +127,7 @@ namespace Prune.Services.Tests
         }
 
         [TestMethod()]
-        public void GetFilesToRemoveList_InvalidPath_ReturnsEmpty()
+        public void GetFilesAndFilesToKeepList_InvalidPath_ReturnsEmpty()
         {
             // Arrange
             var path = "InvalidFolder";
@@ -145,15 +145,16 @@ namespace Prune.Services.Tests
             directoryInfoWrapperMock!.Setup(x => x.Exists(path)).Returns(false);
 
             // Act
-            var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
+            (var filePaths, var filesToKeep) = pruneService!.GetFilesAndFilesToKeepList(parameter);
 
             // Assert
-            Assert.AreEqual(0, filesToRemove.Count);
+            Assert.AreEqual(0, filePaths.Count);
+            Assert.AreEqual(0, filesToKeep.Count);
             directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
         }
 
         [TestMethod()]
-        public void GetFilesToRemoveList_PruneAll_ReturnsAllFiles()
+        public void GetFilesAndFilesToKeepList_PruneAll_ReturnsAllFiles()
         {
             // Arrange
             var path = "ValidFolder";
@@ -173,17 +174,18 @@ namespace Prune.Services.Tests
             directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
-            var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
+            (var filePaths, var filesToKeep) = pruneService!.GetFilesAndFilesToKeepList(parameter);
 
             // Assert
             // There are 84 files
-            Assert.AreEqual(84, filesToRemove.Count);
+            Assert.AreEqual(84, filePaths.Count);
+            Assert.AreEqual(0, filesToKeep.Count);
             directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
             directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
 
         [TestMethod()]
-        public void GetFilesToRemoveList_KeepTwoLastThreeHourlyOneWeekly_ReturnsAllButKeep()
+        public void GetFilesAndFilesToKeepList_KeepTwoLastThreeHourlyOneWeekly_ReturnsAllButKeep()
         {
             // Arrange
             var path = "ValidFolder";
@@ -198,13 +200,13 @@ namespace Prune.Services.Tests
                 KeepYearly = 0,
                 Path = path
             };
-            var filesToKeep = new HashSet<string>
+            var expectedFilesToKeep = new HashSet<string>
             {
                 "file_created_2023-07-28_20-00-00.txt",
                 "file_created_2023-07-28_16-00-00.txt",
-                "file_created_2023-07-28_14-00-00.txt",
                 "file_created_2023-07-28_12-00-00.txt",
                 "file_created_2023-07-28_08-00-00.txt",
+                "file_created_2023-07-28_04-00-00.txt",
                 "file_created_2023-07-23_20-00-00.txt"
             };
 
@@ -212,12 +214,14 @@ namespace Prune.Services.Tests
             directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
-            var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
+            (var filePaths, var actualFilesToKeep) = pruneService!.GetFilesAndFilesToKeepList(
+                parameter
+            );
 
             // Assert
             // There are 84 files
-            Assert.AreEqual(78, filesToRemove.Count);
-            Assert.IsFalse(filesToRemove.Any(filesToKeep.Contains));
+            Assert.AreEqual(84, filePaths.Count);
+            Assert.IsTrue(actualFilesToKeep.SetEquals(expectedFilesToKeep));
             directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
             directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
@@ -238,7 +242,7 @@ namespace Prune.Services.Tests
                 KeepYearly = 0,
                 Path = path
             };
-            var filesToKeep = new HashSet<string>
+            var expectedFilesToKeep = new HashSet<string>
             {
                 "file_created_2023-07-28_20-00-00.txt",
                 "file_created_2023-07-27_20-00-00.txt",
@@ -250,12 +254,14 @@ namespace Prune.Services.Tests
             directoryInfoWrapperMock.Setup(x => x.GetFiles(path)).Returns([.. files]);
 
             // Act
-            var filesToRemove = pruneService!.GetFilesToRemoveList(parameter);
+            (var filePaths, var actualFilesToKeep) = pruneService!.GetFilesAndFilesToKeepList(
+                parameter
+            );
 
             // Assert
             // There are 84 files
-            Assert.AreEqual(80, filesToRemove.Count);
-            Assert.IsFalse(filesToRemove.Any(filesToKeep.Contains));
+            Assert.AreEqual(84, filePaths.Count);
+            Assert.IsTrue(actualFilesToKeep.SetEquals(expectedFilesToKeep));
             directoryInfoWrapperMock.Verify(x => x.Exists(path), Times.Once);
             directoryInfoWrapperMock.Verify(x => x.GetFiles(path), Times.Once);
         }
@@ -277,7 +283,7 @@ namespace Prune.Services.Tests
             }
 
             // Act
-            var filesRemovedCount = pruneService!.RemoveFiles(files);
+            var filesRemovedCount = pruneService!.RemoveFiles(files, []);
 
             // Assert
             Assert.AreEqual(3, filesRemovedCount);
