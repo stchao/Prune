@@ -50,6 +50,34 @@ namespace Prune.Extensions.Tests
         }
 
         [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOneIntervalToAddWithHourlyInterval_ReturnsStartOfNextHourOfDateConst()
+        {
+            // Arrange
+            var interval = Interval.Hourly;
+            var startOfNextHourInMs = 1_701_446_400_000; // 12/01/2023 16:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 1);
+
+            // Assert
+            Assert.AreEqual(startOfNextHourInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOverTwentyFourIntervalToAddWithHourlyInterval_ReturnsStartOfHourAfterAddingIntervalToDateConst()
+        {
+            // Arrange
+            var interval = Interval.Hourly;
+            var startOfHourAfterAddingIntervalInMs = 1_701_540_000_000; // 12/02/2023 18:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 27);
+
+            // Assert
+            Assert.AreEqual(startOfHourAfterAddingIntervalInMs, intervalStart);
+        }
+
+        [TestMethod()]
         public void GetIntervalStartInUnixMs_DateConstWithDailyInterval_ReturnsStartOfDayOfDateConst()
         {
             // Arrange
@@ -78,6 +106,34 @@ namespace Prune.Extensions.Tests
         }
 
         [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOneIntervalToAddWithDailyInterval_ReturnsStartOfNextDayOfDateConst()
+        {
+            // Arrange
+            var interval = Interval.Daily;
+            var startOfNextDayInMs = 1_701_475_200_000; // 12/02/2023 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 1);
+
+            // Assert
+            Assert.AreEqual(startOfNextDayInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOverThirtyOneIntervalToAddWithDailyInterval_ReturnsStartOfDayAfterAddingIntervalToDateConst()
+        {
+            // Arrange
+            var interval = Interval.Daily;
+            var startOfDayAfterAddingIntervalInMs = 1_704_412_800_000; // 01/05/2024 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 35);
+
+            // Assert
+            Assert.AreEqual(startOfDayAfterAddingIntervalInMs, intervalStart);
+        }
+
+        [TestMethod()]
         public void GetIntervalStartInUnixMs_DateConstWithWeeklyIntervalStartingMonday_ReturnsStartOfWeekOfDateConst()
         {
             // Arrange
@@ -103,6 +159,34 @@ namespace Prune.Extensions.Tests
 
             // Assert
             Assert.AreEqual(startOfPreviousWeekIfMondayInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOneIntervalToAddWithWeeklyIntervalStartingMonday_ReturnsStartOfNextWeekOfDateConst()
+        {
+            // Arrange
+            var interval = Interval.Weekly;
+            var startOfNextWeekIfMondayInMs = 1_701_648_000_000; // 12/04/2023 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 1, 1);
+
+            // Assert
+            Assert.AreEqual(startOfNextWeekIfMondayInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOverFiftyTwoIntervalToAddWithWeeklyIntervalStartingMonday_ReturnsStartOfWeekAfterAddingIntervalToDateConst()
+        {
+            // Arrange
+            var interval = Interval.Weekly;
+            var startOfWeekAfterAddingIntervalIfMondayInMs = 1_736_121_600_000; // 01/06/2025 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 58, 1);
+
+            // Assert
+            Assert.AreEqual(startOfWeekAfterAddingIntervalIfMondayInMs, intervalStart);
         }
 
         [TestMethod()]
@@ -148,6 +232,34 @@ namespace Prune.Extensions.Tests
         }
 
         [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOneIntervalToAddWithMonthlyInterval_ReturnsStartOfNextMonthOfDateConst()
+        {
+            // Arrange
+            var interval = Interval.Monthly;
+            var startOfNextMonthInMs = 1_704_067_200_000; // 01/01/2024 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 1);
+
+            // Assert
+            Assert.AreEqual(startOfNextMonthInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOverTwelveIntervalToAddWithMonthlyInterval_ReturnsStartOfMonthAfterAddingIntervalToDateConst()
+        {
+            // Arrange
+            var interval = Interval.Monthly;
+            var startOfMonthAfterAddingIntervalInMs = 1_735_689_600_000; // 01/01/2025 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 13);
+
+            // Assert
+            Assert.AreEqual(startOfMonthAfterAddingIntervalInMs, intervalStart);
+        }
+
+        [TestMethod()]
         public void GetIntervalStartInUnixMs_DateConstWithYearlyInterval_ReturnsStartOfYearOfDateConst()
         {
             // Arrange
@@ -173,6 +285,20 @@ namespace Prune.Extensions.Tests
 
             // Assert
             Assert.AreEqual(startOfPreviousYearInMs, intervalStart);
+        }
+
+        [TestMethod()]
+        public void GetIntervalStartInUnixMs_DateConstAndOneIntervalToAddWithYearlyInterval_ReturnsStartOfNextYearOfDateConst()
+        {
+            // Arrange
+            var interval = Interval.Yearly;
+            var startOfNextYearInMs = 1_704_067_200_000; // 01/01/2024 00:00:00
+
+            // Act
+            var intervalStart = interval.GetIntervalStartInUnixMs(startDateTimeInMs, 1, 1);
+
+            // Assert
+            Assert.AreEqual(startOfNextYearInMs, intervalStart);
         }
     }
 }
